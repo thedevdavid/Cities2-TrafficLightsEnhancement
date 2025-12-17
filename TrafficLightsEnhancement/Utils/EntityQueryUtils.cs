@@ -9,12 +9,24 @@ namespace C2VM.TrafficLightsEnhancement.Utils
         public static EntityQuery GetEntityQuery(object obj, string fieldName)
         {
             FieldInfo fieldInfo = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fieldInfo == null)
+            {
+                Mod.m_Log.Error($"EntityQueryUtils: Field '{fieldName}' not found on type '{obj.GetType().FullName}'. " +
+                                "This may indicate a game version incompatibility.");
+                return default;
+            }
             return (EntityQuery)fieldInfo.GetValue(obj);
         }
 
         public static void SetEntityQuery(object obj, string fieldName, EntityQuery entityQuery)
         {
             FieldInfo fieldInfo = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fieldInfo == null)
+            {
+                Mod.m_Log.Error($"EntityQueryUtils: Field '{fieldName}' not found on type '{obj.GetType().FullName}'. " +
+                                "This may indicate a game version incompatibility.");
+                return;
+            }
             fieldInfo.SetValue(obj, entityQuery);
         }
 

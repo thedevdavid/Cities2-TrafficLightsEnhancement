@@ -48,8 +48,23 @@ public partial class ToolSystem : NetToolSystem
         m_TooltipSystem = World.GetOrCreateSystemManaged<UI.TooltipSystem>();
         m_UISystem = World.GetOrCreateSystemManaged<UI.UISystem>();
         m_ParentControlPoints = GetControlPoints(out JobHandle _);
-        m_ParentAppliedUpgrade = (NativeReference<AppliedUpgrade>)typeof(NetToolSystem).GetField("m_AppliedUpgrade", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(this);
+        
+        var appliedUpgradeField = typeof(NetToolSystem).GetField("m_AppliedUpgrade", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (appliedUpgradeField != null)
+        {
+            m_ParentAppliedUpgrade = (NativeReference<AppliedUpgrade>)appliedUpgradeField.GetValue(this);
+        }
+        else
+        {
+            Mod.m_Log.Error("ToolSystem: m_AppliedUpgrade field not found in NetToolSystem. Tool functionality will be limited.");
+        }
+        
         m_DisplayOverridePropertyInfo = typeof(Game.Input.ProxyAction).GetProperty("displayOverride");
+        if (m_DisplayOverridePropertyInfo == null)
+        {
+            Mod.m_Log.Warn("ToolSystem: displayOverride property not found. Action tooltips may not display correctly.");
+        }
+        
         m_ToolSystem.EventToolChanged += ToolChanged;
 
         m_ConfigureTooltip = new StringTooltip
@@ -117,7 +132,7 @@ public partial class ToolSystem : NetToolSystem
                 m_RenderSystem.ClearLineMesh();
                 UpdateTooltip(m_RaycastResult);
             }
-            if (applyAction.WasReleasedThisFrame())
+            if (applyAction.WasReleasedThisFrame() && m_ParentAppliedUpgrade.IsCreated)
             {
                 Entity entity = m_ParentAppliedUpgrade.Value.m_Entity;
                 CompositionFlags flags = m_ParentAppliedUpgrade.Value.m_Flags;
@@ -194,6 +209,8 @@ public partial class ToolSystem : NetToolSystem
 
     private void DisableActionTooltips()
     {
+        if (m_DisplayOverridePropertyInfo == null) return;
+        
         if (applyAction is Game.Input.UIInputAction.State applyActionState)
         {
             m_DisplayOverridePropertyInfo.SetValue(applyActionState.action, null);

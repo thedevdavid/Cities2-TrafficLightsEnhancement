@@ -61,7 +61,15 @@ public class Settings : ModSetting
         {
             m_Locale = value;
             Colossal.Localization.LocalizationManager localizationManager = Game.SceneFlow.GameManager.instance.localizationManager;
-            localizationManager.GetType().GetTypeInfo().GetDeclaredMethod("NotifyActiveDictionaryChanged").Invoke(localizationManager, null);
+            var method = localizationManager.GetType().GetTypeInfo().GetDeclaredMethod("NotifyActiveDictionaryChanged");
+            if (method != null)
+            {
+                method.Invoke(localizationManager, null);
+            }
+            else
+            {
+                Mod.m_Log.Warn("Settings: NotifyActiveDictionaryChanged method not found. Locale change may not take effect immediately.");
+            }
         }
     }
 
